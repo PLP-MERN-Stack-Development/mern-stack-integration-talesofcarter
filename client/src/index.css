@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #df6c4f;
+  --color-background: #e3e2df;
+}
+
+body {
+  font-family: "Red Hat Display", sans-serif;
+}
