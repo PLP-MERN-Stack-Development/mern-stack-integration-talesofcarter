@@ -66,7 +66,7 @@ const Login = () => {
         </form>
         <div className="text-center">
           <p className="text-sm">
-            Don't have an account?
+            Don't have an account?{" "}
             <Link
               to="/signup"
               className="font-medium text-[#df6c4f] hover:text-opacity-80 transition duration-150 ease-in-out"
@@ -75,7 +75,6 @@ const Login = () => {
             </Link>
           </p>
         </div>
-        s
       </div>
     </div>
   );

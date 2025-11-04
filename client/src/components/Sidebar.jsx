@@ -1,19 +1,20 @@
 import { NavLink } from "react-router";
 import { TfiClose } from "react-icons/tfi";
+import { TbEdit } from "react-icons/tb";
 import { CiLogin } from "react-icons/ci";
 import {
   HiOutlineHome,
   HiOutlinePencilAlt,
-  HiOutlineInformationCircle,
   HiOutlinePhone,
 } from "react-icons/hi";
+import { RiDoubleQuotesL } from "react-icons/ri";
 import { AnimatePresence, motion } from "framer-motion";
 
 function Sidebar({ openSidebar, toggleSidebar }) {
   const navItems = [
     { label: "Home", link: "/", icon: HiOutlineHome },
-    { label: "Blog", link: "/blog", icon: HiOutlinePencilAlt },
-    { label: "About", link: "/post", icon: HiOutlineInformationCircle },
+    { label: "Blog", link: "/blog", icon: RiDoubleQuotesL },
+    { label: "Post", link: "/post", icon: HiOutlinePencilAlt },
     { label: "Contact", link: "/contact", icon: HiOutlinePhone },
   ];
 
