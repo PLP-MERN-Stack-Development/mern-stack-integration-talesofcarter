@@ -37,7 +37,7 @@ function Sidebar({ openSidebar, toggleSidebar }) {
           initial={{ opacity: 0, x: "100%" }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: "100%" }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
           className={`bg-white fixed top-0 z-150 right-0 h-full w-1/3 max-w-xs shadow-xl flex flex-col`}
         >
           <div className="flex flex-col justify-between h-full">
