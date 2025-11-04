@@ -66,6 +66,7 @@ function Sidebar({ openSidebar, toggleSidebar }) {
                           }`
                         }
                         to={item.link}
+                        onClick={toggleSidebar}
                       >
                         <item.icon className="h-5 w-5" />
                         <span className="hidden md:block lg:block">
