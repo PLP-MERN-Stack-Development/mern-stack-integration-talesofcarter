@@ -13,7 +13,7 @@ function Sidebar({ openSidebar, toggleSidebar }) {
   const navItems = [
     { label: "Home", link: "/", icon: HiOutlineHome },
     { label: "Blog", link: "/blog", icon: HiOutlinePencilAlt },
-    { label: "About", link: "/about", icon: HiOutlineInformationCircle },
+    { label: "About", link: "/post", icon: HiOutlineInformationCircle },
     { label: "Contact", link: "/contact", icon: HiOutlinePhone },
   ];
 
