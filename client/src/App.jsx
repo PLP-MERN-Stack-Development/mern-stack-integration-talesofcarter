@@ -15,12 +15,7 @@ function App() {
   return (
     <main>
       <Navbar toggleSidebar={toggleSidebar} />
-      <AnimatePresence>
-        {openSidebar && (
-          <Sidebar openSidebar={openSidebar} toggleSidebar={toggleSidebar} />
-        )}
-      </AnimatePresence>
-
+      <Sidebar openSidebar={openSidebar} toggleSidebar={toggleSidebar} />
       <Routes>
         <Route index element={<Home />} />
       </Routes>

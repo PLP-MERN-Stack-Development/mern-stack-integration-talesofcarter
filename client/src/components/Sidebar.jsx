@@ -11,22 +11,24 @@ import { AnimatePresence, motion } from "framer-motion";
 
 function Sidebar({ openSidebar, toggleSidebar }) {
   const navItems = [
-    { label: "Home", link: "", icon: HiOutlineHome },
-    { label: "Blog", link: "", icon: HiOutlinePencilAlt },
-    { label: "About", link: "", icon: HiOutlineInformationCircle },
-    { label: "Contact", link: "", icon: HiOutlinePhone },
+    { label: "Home", link: "/", icon: HiOutlineHome },
+    { label: "Blog", link: "/blog", icon: HiOutlinePencilAlt },
+    { label: "About", link: "/about", icon: HiOutlineInformationCircle },
+    { label: "Contact", link: "/contact", icon: HiOutlinePhone },
   ];
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={toggleSidebar}
-      ></motion.div>
+      {openSidebar && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={toggleSidebar}
+        ></motion.div>
+      )}
 
       {openSidebar && (
         <motion.aside
@@ -77,10 +79,12 @@ function Sidebar({ openSidebar, toggleSidebar }) {
             </nav>
 
             <div className="p-4 border-t border-gray-200">
-              <button className="flex items-center justify-between space-x-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80 transition-colors w-full duration-500 cursor-pointer">
-                <span>Login</span>
-                <CiLogin className="text-2xl" />
-              </button>
+              <NavLink to="/login">
+                <button className="flex items-center justify-between space-x-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/80 transition-colors w-full duration-500 cursor-pointer">
+                  <span>Login</span>
+                  <CiLogin className="text-2xl" />
+                </button>
+              </NavLink>
             </div>
           </div>
         </motion.aside>
