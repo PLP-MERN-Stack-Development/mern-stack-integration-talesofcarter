@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Blog from "./pages/Blog";
 import Post from "./pages/Post";
+import Contact from "./pages/Contact";
 
 function App() {
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -25,6 +26,7 @@ function App() {
         <Route path="/post" element={<Post />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </main>
   );

@@ -132,7 +132,7 @@ const Post = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 px-5 sm:px-5 md:px-10 lg:px-20 md:p-10 font-sans">
+    <div className="min-h-screen bg-gray-50 my-10 px-5 sm:px-5 md:px-10 lg:px-20 md:p-10 font-sans">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex justify-between items-center mb-8">
@@ -143,14 +143,14 @@ const Post = () => {
           <div className="flex space-x-3">
             <button
               onClick={() => handleSubmit("draft")}
-              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150"
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 cursor-pointer"
             >
               <Save className="w-5 h-5 mr-2" />
               Save Draft
             </button>
             <button
               onClick={() => handleSubmit("publish")}
-              className={`flex items-center px-6 py-2 rounded-lg text-white font-semibold shadow-md transition duration-150 transform hover:scale-[1.02]`}
+              className={`flex items-center px-6 py-2 rounded-lg text-white font-semibold shadow-md transition duration-150 transform cursor-pointer hover:scale-[1.02]`}
               style={{ backgroundColor: primaryColor }}
             >
               <Globe className="w-5 h-5 mr-2" />
