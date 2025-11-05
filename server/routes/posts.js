@@ -1,4 +1,3 @@
-// routes/posts.js
 const express = require("express");
 const multer = require("multer");
 const auth = require("../middleware/auth");

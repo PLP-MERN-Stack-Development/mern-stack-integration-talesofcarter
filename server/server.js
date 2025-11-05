@@ -5,6 +5,10 @@ const cors = require("cors");
 const path = require("path");
 const connectDB = require("./config/db");
 
+require("./models/User");
+require("./models/Category");
+require("./models/Post");
+
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 
