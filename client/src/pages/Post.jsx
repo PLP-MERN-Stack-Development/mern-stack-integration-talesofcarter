@@ -12,21 +12,20 @@ import {
   List,
   X,
 } from "lucide-react";
+import { createPost } from "../services/postService";
+import { categoryService } from "../services/api";
+import { toast } from "react-hot-toast";
 
 const primaryColor = "#df6c4f";
 
-const DUMMY_CATEGORIES = [
-  { id: "1", name: "Technology" },
-  { id: "2", name: "Lifestyle" },
-  { id: "3", name: "Travel" },
-  { id: "4", name: "Finance" },
-];
-
 const Post = () => {
+  const user = { id: "user123", name: "Demo User" };
+  const [loading, setLoading] = useState(false);
+
   const [postData, setPostData] = useState({
     title: "",
     content: "",
-    featuredImage: "",
+    featuredImage: null,
     excerpt: "",
     slug: "",
     category: "",
@@ -34,8 +33,40 @@ const Post = () => {
     isPublished: false,
   });
   const [newTag, setNewTag] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
   const maxTitleLength = 100;
   const maxExcerptLength = 200;
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const data = await categoryService.getAllCategories();
+        setCategories(data);
+      } catch (err) {
+        toast.error("Failed to load categories");
+        console.error(err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (postData.title) {
+      const generatedSlug = postData.title
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, "")
+        .replace(/(^-|-$)/g, "");
+      setPostData((prev) => ({ ...prev, slug: generatedSlug }));
+    } else {
+      setPostData((prev) => ({ ...prev, slug: "" }));
+    }
+  }, [postData.title]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -45,32 +76,18 @@ const Post = () => {
     }));
   };
 
-  useEffect(() => {
-    if (postData.title.length > 0) {
-      const generatedSlug = postData.title
-        .toLowerCase()
-        .replace(/ /g, "-")
-        .replace(/[^\w-]+/g, "");
-      setPostData((prev) => ({ ...prev, slug: generatedSlug }));
-    } else {
-      setPostData((prev) => ({ ...prev, slug: "" }));
-    }
-  }, [postData.title]);
-
-  // Handle adding new tags
-  const handleAddTag = (e) => {
-    e.preventDefault();
+  const handleAddTag = () => {
     const tagToAdd = newTag.trim().toLowerCase();
-    if (tagToAdd && !postData.tags.includes(tagToAdd)) {
-      setPostData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tagToAdd],
-      }));
-      setNewTag("");
+    if (!tagToAdd) {
+      return;
     }
+    setPostData((prev) => ({
+      ...prev,
+      tags: [...prev.tags, tagToAdd],
+    }));
+    setNewTag("");
   };
 
-  // Handle removing tags
   const handleRemoveTag = (tagToRemove) => {
     setPostData((prev) => ({
       ...prev,
@@ -78,64 +95,65 @@ const Post = () => {
     }));
   };
 
-  const handleSubmit = (action) => {
-    const status = action === "publish" ? "Published" : "Draft";
-    console.log(`Submitting post as ${status}:`, postData);
-
-    // Basic validation
-    if (!postData.title || !postData.content || !postData.category) {
-      console.error(
-        `Title, Content, and Category are required! Failed to ${action}.`
-      );
+  const handleSubmit = async (action) => {
+    if (!postData.title.trim()) {
+      // showToast("Title is required", "error"); // <-- REPLACE
+      toast.error("Title is required"); // <-- WITH THIS
       return;
     }
-    console.log(`Post saved successfully as ${status}!`);
+    if (!postData.content.trim()) {
+      // showToast("Content is required", "error"); // <-- REPLACE
+      toast.error("Content is required"); // <-- WITH THIS
+      return;
+    }
+
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("title", postData.title.trim());
+    formData.append("content", postData.content.trim());
+    formData.append("excerpt", postData.excerpt.trim());
+    formData.append("slug", postData.slug); // Note: Your backend auto-generates this, so sending it is optional
+    formData.append("category", postData.category);
+    formData.append("tags", postData.tags.join(","));
+    formData.append("isPublished", action === "publish" ? "true" : "false");
+
+    if (postData.featuredImage) {
+      formData.append("featuredImage", postData.featuredImage);
+    }
+
+    try {
+      // await mockPostService.createPost(formData); // <-- REPLACE THIS
+      await createPost(formData); // <-- WITH THIS
+
+      // showToast(...) // <-- REPLACE THIS
+      toast.success(
+        `Post ${
+          action === "publish" ? "published" : "saved as draft"
+        } successfully!`
+      );
+      // ... (rest of the state reset logic)
+    } catch (err) {
+      const msg =
+        err.response?.data?.error || err.message || "Failed to save post";
+      // showToast(msg, "error"); // <-- REPLACE THIS
+      toast.error(msg); // <-- WITH THIS
+      console.error("Post creation error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const InputField = ({
-    label,
-    name,
-    type = "text",
-    value,
-    onChange,
-    icon: Icon,
-    placeholder,
-    maxLength,
-    required = false,
-  }) => (
-    <div className="space-y-1">
-      <label
-        htmlFor={name}
-        className="block text-sm font-semibold text-gray-700 flex items-center"
-      >
-        {Icon && <Icon className="w-4 h-4 mr-2 text-gray-500" />}
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        required={required}
-        className={`w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150`}
-      />
-      {maxLength && (
-        <p className="text-xs text-right text-gray-400">
-          {value.length} / {maxLength}
-        </p>
-      )}
-    </div>
-  );
+  const handleTagKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 my-10 px-5 sm:px-5 md:px-10 lg:px-20 md:p-10 font-sans">
+    <div className="min-h-screen bg-gray-50 py-10 px-5 sm:px-5 md:px-10 lg:px-20 font-sans">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="flex justify-between items-center mb-8">
+        <header className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <h1 className="text-2xl font-medium text-gray-900 flex items-center">
             <Edit3 className="w-8 h-8 mr-3" style={{ color: primaryColor }} />
             New Blog Post
@@ -143,29 +161,64 @@ const Post = () => {
           <div className="flex space-x-3">
             <button
               onClick={() => handleSubmit("draft")}
-              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 cursor-pointer"
+              disabled={loading}
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5 mr-2" />
               Save Draft
             </button>
             <button
               onClick={() => handleSubmit("publish")}
-              className={`flex items-center px-6 py-2 rounded-lg text-white font-semibold shadow-md transition duration-150 transform cursor-pointer hover:scale-[1.02]`}
+              disabled={loading}
+              className="flex items-center px-6 py-2 rounded-lg text-white font-semibold shadow-md transition duration-150 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               style={{ backgroundColor: primaryColor }}
             >
               <Globe className="w-5 h-5 mr-2" />
-              Publish
+              {loading ? "Publishing..." : "Publish"}
             </button>
           </div>
         </header>
 
-        {/* Main Editor Grid */}
+        <div className="bg-white p-6 rounded-xl shadow-lg mb-6 border border-gray-100">
+          <label className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+            <Image className="w-4 h-4 mr-2 text-gray-500" />
+            Featured Image
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            className="block w-full text-sm text-gray-500"
+          />
+          <style>{`
+            input[type="file"]::file-selector-button {
+              background-color: ${primaryColor};
+              color: white;
+              padding: 0.5rem 1rem;
+              border: none;
+              border-radius: 9999px;
+              font-size: 0.875rem;
+              font-weight: 600;
+              cursor: pointer;
+              margin-right: 1rem;
+            }
+            input[type="file"]::file-selector-button:hover {
+              opacity: 0.8;
+            }
+          `}</style>
+          {postData.featuredImage && (
+            <div className="mt-3 flex items-center text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+              <Check className="w-4 h-4 mr-2" />
+              Image selected: {postData.featuredImage.name}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
               <label
                 htmlFor="title"
-                className="block text-lg font-bold text-gray-700 flex items-center mb-2"
+                className="text-lg font-bold text-gray-700 flex items-center mb-2"
               >
                 <Type
                   className="w-6 h-6 mr-2"
@@ -183,17 +236,20 @@ const Post = () => {
                 placeholder="Enter a compelling title (max 100 characters)"
                 maxLength={maxTitleLength}
                 required
-                className={`text-2xl font-semibold w-full px-4 py-3 border-b-2 border-gray-200 focus:border-[${primaryColor}] focus:ring-0 focus:outline-none transition duration-200`}
+                className="text-2xl font-semibold w-full px-4 py-3 border-b-2 border-gray-200 focus:outline-none transition duration-200"
+                style={{
+                  borderBottomColor: postData.title ? primaryColor : undefined,
+                }}
               />
               <p className="text-sm text-right text-gray-400 mt-2">
                 {postData.title.length} / {maxTitleLength}
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-lg h-[500px] border border-gray-100">
+            <div className="bg-white p-6 rounded-xl shadow-lg h-auto border border-gray-100">
               <label
                 htmlFor="content"
-                className="block text-lg font-bold text-gray-700 flex items-center mb-2"
+                className="text-lg font-bold text-gray-700 flex items-center mb-2"
               >
                 <Feather
                   className="w-5 h-5 mr-2"
@@ -209,7 +265,10 @@ const Post = () => {
                 onChange={handleChange}
                 placeholder="Start writing your amazing blog post here..."
                 required
-                className={`w-full h-[calc(100%-40px)] p-4 text-gray-800 border-2 border-gray-100 rounded-lg resize-none focus:outline-none focus:border-primary transition duration-150`}
+                className="w-full h-96 p-4 text-gray-800 border-2 border-gray-100 rounded-lg resize-none focus:outline-none transition duration-150"
+                style={{
+                  borderColor: postData.content ? primaryColor : undefined,
+                }}
               />
             </div>
           </div>
@@ -217,10 +276,12 @@ const Post = () => {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-4 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 border-b pb-3 mb-3 flex items-center">
-                <Globe className="w-5 h-5 mr-2 text-primary" />
+                <Globe
+                  className="w-5 h-5 mr-2"
+                  style={{ color: primaryColor }}
+                />
                 Publish Status
               </h3>
-
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="isPublished"
@@ -242,34 +303,26 @@ const Post = () => {
                     type="checkbox"
                     checked={postData.isPublished}
                     onChange={handleChange}
-                    className={`form-checkbox h-5 w-5 rounded-full border-gray-300 focus:ring-primary`}
+                    className="w-5 h-5 rounded border-gray-300 cursor-pointer"
                     style={{ accentColor: primaryColor }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Post Details Card */}
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-4 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 border-b pb-3 mb-3 flex items-center">
-                <List className="w-5 h-5 mr-2 text-primary" />
+                <List
+                  className="w-5 h-5 mr-2"
+                  style={{ color: primaryColor }}
+                />
                 Post Details
               </h3>
 
-              <InputField
-                label="Featured Image URL"
-                name="featuredImage"
-                value={postData.featuredImage}
-                onChange={handleChange}
-                icon={Image}
-                placeholder="e.g., https://unsplash.com/image.jpg"
-              />
-
-              {/* Excerpt */}
               <div className="space-y-1">
                 <label
                   htmlFor="excerpt"
-                  className="block text-sm font-semibold text-gray-700 flex items-center"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
                 >
                   <Feather className="w-4 h-4 mr-2 text-gray-500" />
                   Excerpt (Short Summary)
@@ -281,8 +334,8 @@ const Post = () => {
                   onChange={handleChange}
                   placeholder="A short summary for previews (max 200 characters)"
                   maxLength={maxExcerptLength}
-                  className={`w-full px-4 py-2 border rounded-lg shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150`}
-                  rows="3"
+                  className="w-full px-4 py-2 border rounded-lg shadow-sm resize-none focus:outline-none focus:ring-2 transition duration-150"
+                  rows={3}
                 />
                 <p className="text-xs text-right text-gray-400">
                   {postData.excerpt.length} / {maxExcerptLength}
@@ -292,11 +345,10 @@ const Post = () => {
               <div className="space-y-1">
                 <label
                   htmlFor="slug"
-                  className="block text-sm font-semibold text-gray-700 flex items-center"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
                 >
                   <Link className="w-4 h-4 mr-2 text-gray-500" />
                   SEO Slug (URL Path)
-                  <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   id="slug"
@@ -305,24 +357,25 @@ const Post = () => {
                   value={postData.slug}
                   onChange={handleChange}
                   placeholder="auto-generated-from-title"
-                  required
                   className="w-full px-4 py-2 border rounded-lg bg-gray-50 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 transition duration-150 text-sm"
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto-generated from title
+                </p>
               </div>
             </div>
 
-            {/* Categorization & Tags Card */}
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-4 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 border-b pb-3 mb-3 flex items-center">
-                <Tag className="w-5 h-5 mr-2 text-primary" />
+                <Tag className="w-5 h-5 mr-2" style={{ color: primaryColor }} />
                 Taxonomy
               </h3>
 
-              {/* Category Dropdown */}
               <div className="space-y-1">
                 <label
                   htmlFor="category"
-                  className="block text-sm font-semibold text-gray-700 flex items-center"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
                 >
                   <List className="w-4 h-4 mr-2 text-gray-500" />
                   Category
@@ -333,54 +386,70 @@ const Post = () => {
                   name="category"
                   value={postData.category}
                   onChange={handleChange}
-                  required
-                  className={`w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 bg-white appearance-none`}
+                  disabled={loadingCategories}
+                  className="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 transition duration-150 bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="" disabled>
-                    Select a category
+                    {loadingCategories
+                      ? "Loading categories..."
+                      : "Select a category"}
                   </option>
-                  {DUMMY_CATEGORIES.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
                       {cat.name}
                     </option>
                   ))}
                 </select>
+                {!loadingCategories && categories.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No categories available. Please create categories first.
+                  </p>
+                )}
               </div>
 
-              {/* Tags Input */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 flex items-center">
+                <label className="text-sm font-semibold text-gray-700 flex items-center">
                   <Tag className="w-4 h-4 mr-2 text-gray-500" />
                   Tags
+                  <span className="text-xs text-gray-500 ml-2">(max 10)</span>
                 </label>
-                <form onSubmit={handleAddTag} className="flex space-x-2">
+                <div className="flex space-x-2">
                   <input
                     type="text"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={handleTagKeyPress}
                     placeholder="Add a tag and press Enter"
-                    className={`flex-grow px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[${primaryColor}]`}
+                    className="grow px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 transition"
+                    maxLength={30}
                   />
                   <button
-                    type="submit"
-                    className="p-2 bg-primary rounded-lg text-white font-medium shadow-sm flex items-center justify-center"
+                    onClick={handleAddTag}
+                    className="p-2 rounded-lg text-white font-medium shadow-sm flex items-center justify-center hover:opacity-90 transition"
+                    style={{ backgroundColor: primaryColor }}
                   >
                     <Check className="w-5 h-5" />
                   </button>
-                </form>
+                </div>
 
-                {/* Tag List */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {postData.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-gray-200 text-gray-800 cursor-pointer hover:bg-gray-300 transition duration-150"
-                      onClick={() => handleRemoveTag(tag)}
-                    >
-                      {tag}
-                      <X className="ml-2 w-3 h-3 text-gray-600" />
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-2 pt-2 min-h-10">
+                  {postData.tags.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic">
+                      No tags added yet
+                    </p>
+                  ) : (
+                    postData.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-gray-200 text-gray-800 cursor-pointer hover:bg-gray-300 transition duration-150"
+                        onClick={() => handleRemoveTag(tag)}
+                        title="Click to remove"
+                      >
+                        {tag}
+                        <X className="ml-2 w-3 h-3 text-gray-600" />
+                      </span>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

@@ -1,68 +1,94 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router";
-import { mockPosts } from "../utils/mockData";
+import { useParams, Link } from "react-router";
+import { useEffect, useState } from "react";
+import { getPostBySlug } from "../services/postService";
+import { FiUser } from "react-icons/fi";
+import { GoCalendar } from "react-icons/go";
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
 function SinglePost() {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const foundPost = mockPosts.find((p) => p.slug === slug);
-    setPost(foundPost);
-    // Mock comments
-    setComments([{ id: 1, text: "Great post!" }]);
+    const fetchPost = async () => {
+      try {
+        const { data } = await getPostBySlug(slug);
+        setPost(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPost();
   }, [slug]);
 
-  const handleAddComment = (e) => {
-    e.preventDefault();
-    if (newComment) {
-      setComments([...comments, { id: comments.length + 1, text: newComment }]);
-      setNewComment("");
-    }
-  };
-
-  if (!post) return <div>Loading...</div>;
+  if (loading) return <div className="text-center py-20">Loading post...</div>;
+  if (!post)
+    return (
+      <div className="text-center text-2xl m-20 md:text-3xl lg:text-4xl bg-primary py-20 text-white rounded-2xl">
+        Post not found.
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-5 md:px-10 lg:px-20">
-      <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
+    <article className="container mx-auto px-4 py-10 max-w-4xl">
+      <Link
+        to="/blog"
+        className="text-primary hover:underline mb-6 inline-block"
+      >
+        ← Back to Blog
+      </Link>
+
+      <header className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
+        <div className="flex items-center gap-6 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <FiUser />
+            <span>{post.author?.username}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <GoCalendar />
+            <span>{formatDate(post.createdAt)}</span>
+          </div>
+          <span className="bg-indigo-100 text-primary px-3 py-1 rounded-full">
+            {post.category?.name}
+          </span>
+        </div>
+      </header>
+
       {post.featuredImage && (
         <img
           src={post.featuredImage}
           alt={post.title}
-          className="w-full h-64 object-cover mb-6 rounded"
+          className="w-full h-96 object-cover rounded-lg mb-8"
         />
       )}
+
       <div
-        className="prose max-w-none"
+        className="prose prose-lg max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">Comments</h2>
-        {comments.map((comment) => (
-          <p key={comment.id} className="bg-white p-3 rounded mb-2">
-            {comment.text}
-          </p>
-        ))}
-        <form onSubmit={handleAddComment} className="mt-4">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="w-full px-4 py-2 border rounded-lg mb-2"
-            rows="3"
-          />
-          <button
-            type="submit"
-            className="bg-primary text-white px-4 py-2 rounded"
+
+      <div className="mt-10 flex flex-wrap gap-2">
+        {post.tags.map((tag) => (
+          <span
+            key={tag}
+            className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
           >
-            Submit
-          </button>
-        </form>
+            #{tag}
+          </span>
+        ))}
       </div>
-    </div>
+    </article>
   );
 }
 

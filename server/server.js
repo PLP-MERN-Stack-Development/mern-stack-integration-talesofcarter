@@ -1,4 +1,3 @@
-// server.js
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -11,13 +10,16 @@ require("./models/Post");
 
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
+const categoryRoutes = require("./routes/category");
 
 const app = express();
 connectDB();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use("/uploads", express.static("uploads"));
+app.use("/api/categories", categoryRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);

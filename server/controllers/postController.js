@@ -29,16 +29,31 @@ const getPost = async (req, res) => {
   }
 };
 
+// GET single post by slug
+const getPostBySlug = async (req, res) => {
+  try {
+    const post = await Post.findOne({ slug: req.params.slug })
+      .populate("author", "username")
+      .populate("category", "name")
+      .populate("comments.author", "username"); // optional
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    res.json(post);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 // CREATE post
 const createPost = async (req, res) => {
   const { title, content, excerpt, category, tags, isPublished } = req.body;
   let featuredImage = "default-post.jpg";
 
-  if (!title || !content || !category) {
+  if (!title || !content) {
     if (req.file) deleteFile(req.file.path);
-    return res
-      .status(400)
-      .json({ error: "Title, content, and category required" });
+    return res.status(400).json({ error: "Title and content are required" });
   }
 
   try {
@@ -60,6 +75,7 @@ const createPost = async (req, res) => {
         crop: "scale",
       });
       featuredImage = result.secure_url;
+      deleteFile(req.file.path);
     }
 
     const post = await Post.create({
@@ -67,14 +83,12 @@ const createPost = async (req, res) => {
       content,
       excerpt,
       featuredImage,
-      category,
+      category: category || null,
       tags: tags ? tags.split(",").map((t) => t.trim()) : [],
       isPublished: isPublished === "true",
       author: req.user.id,
       slug,
     });
-
-    if (req.file) deleteFile(req.file.path);
 
     const populated = await Post.findById(post._id)
       .populate("author", "username")
@@ -120,12 +134,16 @@ const updatePost = async (req, res) => {
         folder: "quickblog/posts",
       });
       updates.featuredImage = result.secure_url;
+
+      deleteFile(req.file.path);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, "category")) {
+      updates.category = updates.category || null;
     }
 
     Object.assign(post, updates);
     await post.save();
-
-    if (req.file) deleteFile(req.file.path);
 
     const populated = await Post.findById(post._id)
       .populate("author", "username")
@@ -159,4 +177,11 @@ const deletePost = async (req, res) => {
   }
 };
 
-module.exports = { getPosts, getPost, createPost, updatePost, deletePost };
+module.exports = {
+  getPosts,
+  getPost,
+  getPostBySlug,
+  createPost,
+  updatePost,
+  deletePost,
+};
