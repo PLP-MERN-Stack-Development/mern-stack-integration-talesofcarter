@@ -1,13 +1,14 @@
 import { IoBook } from "react-icons/io5";
 import LoginBtn from "./LoginBtn";
+import { Link } from "react-router";
 
 function Navbar({ toggleSidebar }) {
   return (
-    <div className="sticky top-0 z-100 bg-background/40 flex justify-between px-5 sm:px-5 md:px-10 lg:px-20 py-5 shadow">
-      <div className="flex items-center gap-3">
+    <div className="sticky top-0 z-100 bg-gray-100 flex justify-between px-5 sm:px-5 md:px-10 lg:px-20 py-5 shadow">
+      <Link to="/" className="flex items-center gap-3">
         <IoBook className="text-primary text-4xl" />
         <h1 className="text-3xl font-bold">QuickBlog</h1>
-      </div>
+      </Link>
       <div className="flex gap-3">
         <LoginBtn />
 
